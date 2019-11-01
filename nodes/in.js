@@ -1,4 +1,4 @@
-module.exports = function(RED) {
+module.exports = function (RED) {
     class deConzItemIn {
         constructor(config) {
             RED.nodes.createNode(this, config);
@@ -36,7 +36,7 @@ module.exports = function(RED) {
                     node.meta = deviceMeta;
                     if (node.config.outputAtStartup) {
                         setTimeout(function () {
-                            node.sendState(deviceMeta,true);
+                            node.sendState(deviceMeta, true);
                         }, 1500); //we need this timeout after restart of node-red  (homekit delays)
                     } else {
                         setTimeout(function () {
@@ -90,24 +90,29 @@ module.exports = function(RED) {
                         text: nodeState !== null ? nodeState.toString() : "node-red-contrib-deconz/in:status.connected"
                     });
                 }
-                if (node.oldState === undefined && device.state[node.config.state]) { node.oldState = device.state[node.config.state]; }
-                if (node.prevUpdateTime === undefined && device.state['lastupdated']) { node.prevUpdateTime = device.state['lastupdated']; }
-                return(device)
+                if (node.oldState === undefined && device.state[node.config.state]) {
+                    node.oldState = device.state[node.config.state];
+                }
+                if (node.prevUpdateTime === undefined && device.state['lastupdated']) {
+                    node.prevUpdateTime = device.state['lastupdated'];
+                }
+                return (device)
             }
         };
 
-        sendState(device,force=false) {
+        sendState(device, force = false) {
             var node = this;
             device = node.getState(device);
-            if(!device) { return; }
+            if (!device) {
+                return;
+            }
 
             //filter output
             if (!force && 'onchange' === node.config.output && device.state[node.config.state] === node.oldState) return;
             if (!force && 'onupdate' === node.config.output && device.state['lastupdated'] === node.prevUpdateTime) return;
 
             //outputs
-            node.send([
-                {
+            node.send([{
                     payload: (node.config.state in device.state) ? device.state[node.config.state] : device.state,
                     payload_raw: device,
                     meta: node.server.getDevice(node.config.device)
@@ -123,7 +128,9 @@ module.exports = function(RED) {
         sendStateHomekitOnly(device) {
             var node = this;
             device = node.getState(device);
-            if(!device) { return; }
+            if (!device) {
+                return;
+            }
 
             //outputs
             node.send([
@@ -152,17 +159,17 @@ module.exports = function(RED) {
             var msg = {};
 
             var characteristic = {};
-            if (state !== undefined){
+            if (state !== undefined) {
                 //by types
                 if ("type" in deviceMeta && (deviceMeta.type).toLowerCase() === 'window covering device') {
-                    characteristic.CurrentPosition = Math.ceil(state['bri']/2.55);
-                    characteristic.TargetPosition = Math.ceil(state['bri']/2.55);
+                    characteristic.CurrentPosition = Math.ceil(state['bri'] / 2.55);
+                    characteristic.TargetPosition = Math.ceil(state['bri'] / 2.55);
                     if (no_reponse) {
                         characteristic.CurrentPosition = "NO_RESPONSE";
                         characteristic.TargetPosition = "NO_RESPONSE";
                     }
 
-                //by params
+                    //by params
                 } else {
 
                     if (state['temperature'] !== undefined) {
@@ -204,7 +211,7 @@ module.exports = function(RED) {
                         else if ([1010, 2010, 3010, 4010, 5010, 6010].indexOf(state['buttonevent']) >= 0) characteristic.ProgrammableSwitchEvent = 5;
                         if (no_reponse) characteristic.ProgrammableSwitchEvent = "NO_RESPONSE";
 
-                        
+
                         //index of btn
                         if ([1001, 1002, 1004, 1005, 1006, 1010].indexOf(state['buttonevent']) >= 0) characteristic.ServiceLabelIndex = 1;
                         else if ([2001, 2002, 2004, 2005, 2006, 2010].indexOf(state['buttonevent']) >= 0) characteristic.ServiceLabelIndex = 2;
@@ -249,24 +256,22 @@ module.exports = function(RED) {
                     }
 
                     if (state['bri'] !== undefined) {
-                        characteristic.Brightness = Math.ceil(state['bri'] / 2.55);
+                        characteristic.Brightness = Math.round(state['bri'] * 254.0 / 100.0)
                         if (no_reponse) characteristic.Brightness = "NO_RESPONSE";
                     }
 
                     if (state['hue'] !== undefined) {
-                        characteristic.Hue = Math.ceil(state['hue'] / 182);
+                        characteristic.Hue = Math.round(state['hue'] * 65535.0 / 360.0);
                         if (no_reponse) characteristic.Hue = "NO_RESPONSE";
                     }
 
                     if (state['sat'] !== undefined) {
-                        characteristic.Saturation = Math.ceil(state['sat'] / 2.55);
+                        characteristic.Saturation = Math.round(state['sat'] * 254.0 / 100.0);
                         if (no_reponse) characteristic.Saturation = "NO_RESPONSE";
                     }
 
                     if (state['ct'] !== undefined) {
                         characteristic.ColorTemperature = state['ct'];
-                        if (state['ct'] < 140) characteristic.ColorTemperature = 140;
-                        else if (state['ct'] > 500) characteristic.ColorTemperature = 500;
                         if (no_reponse) characteristic.ColorTemperature = "NO_RESPONSE";
                     }
                 }
@@ -274,7 +279,7 @@ module.exports = function(RED) {
 
             //battery status
             if (config !== undefined) {
-                if (config['battery'] !== undefined && config['battery'] != null){
+                if (config['battery'] !== undefined && config['battery'] != null) {
 
                     if (device.type !== 'ZHASwitch') { //exclude
                         characteristic.StatusLowBattery = parseInt(device.config['battery']) <= 15 ? 1 : 0;
@@ -308,7 +313,9 @@ module.exports = function(RED) {
             if (deviceMeta) {
                 node.send([
                     null,
-                    node.formatHomeKit(deviceMeta, {reachable:false})
+                    node.formatHomeKit(deviceMeta, {
+                        reachable: false
+                    })
                 ]);
             }
         }
@@ -341,5 +348,3 @@ module.exports = function(RED) {
     }
     RED.nodes.registerType('deconz-input', deConzItemIn);
 };
-
-
